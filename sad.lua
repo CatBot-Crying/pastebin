@@ -273,7 +273,7 @@ if not next(offsets) then
             _G[v.method] = nil
             gg.toast("🚫 ["..v.method .. "] 🚫")
         end
-        gg.sleep(1000)
+        gg.sleep(600)
     end
 
     saveOffsetsToFile(offsets)
@@ -293,7 +293,7 @@ local xXx = gg.alert(
     "🎲 Game : " .. APK ..
     "\n🪩 Offsets Saved File Found..!!" ..
     "\n" .. filePathStructure ..
-    "\n" .. string.rep("─ ─", 7) ..  -- Adds a line 
+    "\n" .. string.rep("─ ─", 8) ..  -- Adds a line 
     "\nOffsets : 📝\n" .. table.concat(offsetDetails, "\n"),
     "[ Start ]", nil, "[ Update ]"
 )
@@ -359,7 +359,7 @@ end
 
 function B_OFF()
 
-   RevertValue(get_JumpHeight) -- Revert (Hack Off)
+   RevertValue(get_JumpLimit) -- Revert (Hack Off)
     
 return nil
 end
@@ -368,7 +368,7 @@ end
 function C_ON() 
 
    RecordOriginalValue(get_JumpHeight) -- Record Value
-   injectAssembly(get_JumpHeight, 99999) -- Patch value
+   injectAssembly(get_JumpHeight, 99999999) -- Patch value
     
 return true
 end
