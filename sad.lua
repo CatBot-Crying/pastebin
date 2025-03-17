@@ -1,3 +1,5 @@
+while pcall(load("os.exit()")) or not tostring(os.exit):find("gg%.exit") do gg.alert("Block GG Logger") end
+
 a_rm=gg.getFile():match("[^/]*$") if a_rm~="script.lua" then gg.alert("ERROR") os.exit() while (true) do end end;local src = function()
 -- Set Your Libname here
 local libNameSo = "libil2cpp.so"  -- Define the library name
