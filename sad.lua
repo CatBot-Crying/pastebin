@@ -249,7 +249,11 @@ if not next(offsets) then
         class = "CharacterMotorAbilities", -- public class CharacterMotorAbilities 
         method = "get_JumpLimit"  -- public int get_JumpLimit()
         },
-        -- add more class and method if needed 😉
+        [3] = {
+        class = "CharacterMotorAbilities", -- public class CharacterMotorAbilities
+        method = "get_JumpHeight" -- public int get_JumpHeight
+        }
+        
     }
 
     -- Search for each method in the search table
@@ -355,18 +359,37 @@ end
 
 function B_OFF()
 
-   RevertValue(get_JumpLimit) -- Revert (Hack Off)
+   RevertValue(get_JumpHeight) -- Revert (Hack Off)
     
 return nil
 end
 
+-- Hack 3
+function C_ON() 
+
+   RecordOriginalValue(get_JumpHeight) -- Record Value
+   injectAssembly(get_JumpHeight, 99999) -- Patch value
+    
+return true
+end
+
+function C_OFF()
+
+   RevertValue(get_JumpHeight) -- Revert (Hack Off)
+    
+return nil
+end
+
+
+-- Hack Ended
 
 -- Main Menu --
 menuList = {
 
     "Free Shop", -- 1
     "Unlimited Jump", -- 2
-    "EXIT", -- 3
+    "Jump Height", -- 3
+    "EXIT", -- 4
     
 }
 
@@ -375,6 +398,7 @@ checkList = {
     nil, -- 1
     nil,  -- 2
     nil, -- 3
+    nil, -- 4
     
 }
 -- Done 😉
@@ -409,9 +433,23 @@ function menu()
         end
     end
 
-    -- Option 3: Exit
-    if tsu[3] == true then
-        checkList[3] = Exit()
+    -- Option 3: Check and toggle B
+    if tsu[3] ~= checkList[3] then
+        if tsu[3] == true then
+            if check("get_JumpHeight") then -- Check offset
+                checkList[3] = C_ON()
+            else
+                gg.toast("$ ( X_X ) $") -- Error Toast
+            end
+        else
+            checkList[3] = C_OFF()
+        end
+    end
+
+
+    -- Option 4: Exit
+    if tsu[4] == true then
+        checkList[4] = Exit()
     end
 end
 -- Function to apply ARM patches
