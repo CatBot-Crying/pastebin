@@ -1,4 +1,4 @@
-a_rm=gg.getFile():match("[^/]*$") if a_rm~="cript.lua" then gg.alert("ERROR") os.exit() while (true) do end end;local src = function()
+a_rm=gg.getFile():match("[^/]*$") if a_rm~="script.lua" then gg.alert("ERROR") os.exit() while (true) do end end;local src = function()
 -- Set Your Libname here
 local libNameSo = "libil2cpp.so"  -- Define the library name
 local info = gg.getTargetInfo() -- Get information about the target app
