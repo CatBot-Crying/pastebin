@@ -498,8 +498,7 @@ if ipAddress then
     if vpnData and vpnData.block == 1 then
         while true do gg.alert("⚠️ VPN Or Proxy Detected ⚠️ \n\n🔒 Reject IP Address :" .. ipAddress .. "","Exit") break end
     else
-        src()
-        --gg.alert("🟢 No VPN Or Proxy Detected 🟢\n\n🔓 Accept IP Address : " .. ipAddress .. "","Next")
+        gg.alert("🟢 No VPN Or Proxy Detected 🟢\n\n🔓 Accept IP Address : " .. ipAddress .. "","close");src()
     end
 else
     gg.alert("⚠️ IP Address Could Not Be Parsed ⚠️")
