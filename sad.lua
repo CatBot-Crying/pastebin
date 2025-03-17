@@ -532,7 +532,7 @@ local ipAddress = gg.makeRequest('http://checkip.dyndns.org/').content:match("%d
 
 if ipAddress then
     local vpnData = json.decode(gg.makeRequest('http://v2.api.iphub.info/ip/' .. ipAddress, {
-        ['X-Key'] = "MjYxNDU6RXUzWEs3QkJHTXBOOWlOWWJMQllxd21veUI5MDhKSXQ="
+        ['X-Key'] = "MjcyODk6QXZzMkhYczBiakFwSVlJUkZ6bkpodlM1V1NiQ1BZWEE="
     }).content)
 
     if vpnData and vpnData.block == 1 then
