@@ -344,7 +344,7 @@ checkList = {
 }
 
 function menu()
-    local header = "\n " .. APK .. " [".. info.versionName .. "] \nBy: Saki \n"
+    local header = "\n " .. APK .. " [".. info.versionName .. "] \n By: Saki \n"
     local styledMenu = {}
     for i, item in ipairs(menuList) do
         local status = checkList[i] and "✅ [ON]" or "❌ [OFF]"
