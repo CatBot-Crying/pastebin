@@ -1,14 +1,28 @@
 while pcall(load("os.exit()")) or not tostring(os.exit):find("gg%.exit") do gg.alert("Block GG Logger") end
 
-a_rm=gg.getFile():match("[^/]*$") if a_rm~="script.lua" then gg.alert("ERROR") os.exit() while (true) do end end;local src = function()
--- Set Your Libname here
-local libNameSo = "libil2cpp.so"  -- Define the library name
-local info = gg.getTargetInfo() -- Get information about the target app
-local APK = info.label    -- Get APK name
+a_rm = gg.getFile():match("[^/]*$")
+if a_rm ~= "script.lua" then
+    gg.alert("ERROR")
+    os.exit()
+    while true do end
+end
+
+-- Lock to Subway Surfers
+local TARGET_PACKAGE = "com.kiloo.subwaysurf"
+local libNameSo = "libil2cpp.so"
+local info = gg.getTargetInfo()
+if not info or info.packageName ~= TARGET_PACKAGE then
+    gg.alert("This script is designed for Subway Surfers only! Current app: " .. (info and info.packageName or "None"))
+    os.exit()
+end
+
+
+local info = gg.getTargetInfo()   -- Get information about the target app
+local APK = info.label            -- Get APK name
 
 -- Define tables and flags for memory handling
-X_X = {}  -- Store memory range start addresses
-UwU = 0    -- Counter for memory ranges
+X_X = {}           -- Store memory range start addresses
+UwU = 0            -- Counter for memory ranges
 LibraryStatus = 0  -- Flag for library status (0 = not found)
 MemoryRanges = gg.getRangesList()  -- Get the memory ranges list
 
@@ -70,7 +84,6 @@ if LibraryStatus == 2 then
         -- Find the largest split
         if SplitCount > 0 then
             MaxSplitSize = math.max(table.unpack(SplitSizes))
-            -- Iterate to find the largest split size
             for i, range in ipairs(MemoryRanges) do
                 if range.state == "Xa" and (range["end"] - range.start) == MaxSplitSize then
                     UwU = UwU + 1
@@ -95,38 +108,32 @@ if LibraryStatus ~= 1 then
 end
 
 -- Arm Patch
--- Table to store original values for specific offsets
 local Original = {}
 
--- Function to record the original values at a specific offset range
 local function RecordOriginalValue(offset)
     local REV = gg.getValues((function(R)
-        for _, x in ipairs({offset}) do -- Set Offset 
+        for _, x in ipairs({offset}) do
             for i = 0, 16, 4 do
                 R[#R + 1] = {address = X_X[UwU] + x + i, flags = 4}
             end
         end
         return R
     end)({}))
-
-    -- Store the original values in the Original table using the same offset key
     Original[offset] = REV
 end
 
--- Function to revert the values back to the original state for a specific offset
 local function RevertValue(offset)
     local originalValues = Original[offset]
     if originalValues then
-        gg.setValues(originalValues)  -- Revert to the original values
+        gg.setValues(originalValues)
         gg.toast("Hack [OFF]")
-        gg.sleep(1000)
+        gg.sleep(600)
         gg.toast("--( X_X )--")
     else
         gg.alert("⛔ ERROR : ORIGINAL VALUE NOT FOUND ⛔")
     end
 end
 
--- Inject assembly values
 local function injectAssembly(offset, value)
     local addr = X_X[UwU] + offset
     if value == true then
@@ -152,29 +159,34 @@ local function injectAssembly(offset, value)
         })
     end
 end
--- Set up target game environment for memory patching
-::GET_READY::
-gg.setVisible(false)  -- Hide the GameGuardian UI
-for i = 20, 100, 20 do
-    gg.sleep(300)
-    gg.toast(i .. "%")
-end
-local ti = gg.getTargetInfo()  -- Get target info (for 64-bit vs 32-bit detection)
-local p_size = ti.x64 and 0x8 or 0x4  -- Determine pointer size
 
--- Define path to save offsets
+::GET_READY::
+gg.setVisible(false)
+local frames = {"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
+local progress = 0
+while progress <= 100 do
+    local bar = string.rep("█", progress // 10) .. string.rep("░", 10 - progress // 10)
+    local frame = frames[(progress % #frames) + 1]
+    gg.toast(string.format("%s Loading: [%s] %d%%", frame, bar, progress))
+    gg.sleep(300)
+    progress = progress + 10
+end
+gg.toast("🎉 Ready! 🎉")
+gg.sleep(700)
+
+local ti = gg.getTargetInfo()
+local p_size = ti.x64 and 0x8 or 0x4
 local offsetFilePath = gg.EXT_FILES_DIR .. "/" .. APK .. "_Offsets.lua"
 
--- Functions to retrieve and manipulate memory values
-local function getvalue(address, ggType)  -- Get memory value from a specified address
+local function getvalue(address, ggType)
     return gg.getValues({{address = address, flags = ggType}})[1].value
 end
 
-local function ptr(address)  -- Get pointer value (32-bit or 64-bit)
+local function ptr(address)
     return getvalue(address, ti.x64 and gg.TYPE_QWORD or gg.TYPE_DWORD)
 end
 
-local function CString(address, str)  -- Compare string at address with the target string
+local function CString(address, str)
     local bytes = gg.bytes(str)
     for i = 1, #bytes do
         if getvalue(address + i - 1, gg.TYPE_BYTE) & 0xFF ~= bytes[i] then
@@ -184,7 +196,6 @@ local function CString(address, str)  -- Compare string at address with the targ
     return getvalue(address + #bytes, gg.TYPE_BYTE) == 0
 end
 
--- Function to get a method from Il2Cpp by class and method name
 local function GetIl2CppMethod(clazz, method)
     local result = {}
     gg.clearResults()
@@ -208,16 +219,14 @@ local function GetIl2CppMethod(clazz, method)
         end
         gg.clearResults()
     end
-
     return result
 end
 
--- Save and load offsets for methods
 local function saveOffsetsToFile(offsets)
     local file = io.open(offsetFilePath, "w")
     file:write("-- "..APK.."\n-- Version : "..info.versionName.."\n")
     file:write("-- Script By : Your Name \n")
-    file:write("-- "..string.rep("═─═", 5).."\n")
+    file:write("-- "..string.rep("═─═", 7).."\n")
     for method, offset in pairs(offsets) do
         file:write(string.format("%s = %s\n", method, offset))
     end
@@ -239,32 +248,17 @@ local function loadOffsetsFromFile()
     return offsets
 end
 
--- Search for methods and save offsets if not already saved
 local offsets = loadOffsetsFromFile()
 if not next(offsets) then
     local Search = {
-        [1] = {
-        class = "Currency",  -- public class Currency
-        method = "get_IsIAP" -- public bool get_IsIAP()
-        },
-        [2] = {
-        class = "CharacterMotorAbilities", -- public class CharacterMotorAbilities 
-        method = "get_JumpLimit"  -- public int get_JumpLimit()
-        },
-        [3] = {
-        class = "CharacterMotorAbilities", -- public class CharacterMotorAbilities
-        method = "get_JumpHeight" -- public int get_JumpHeight
-        }
-        
+        [1] = {class = "Currency", method = "get_IsIAP"},
+        [2] = {class = "CharacterMotorAbilities", method = "get_JumpLimit"}
     }
 
-    -- Search for each method in the search table
     for i, v in ipairs(Search) do
         gg.toast(string.format("Searching [%s :: %s] (%d/%d)", v.class, v.method, i, #Search))
         gg.sleep(600)
-
         local results = GetIl2CppMethod(v.class, v.method)
-
         if #results > 0 then
             local offset = results[1].address - X_X[UwU]
             offsets[v.method] = string.format("0x%X", offset)
@@ -277,36 +271,29 @@ if not next(offsets) then
         end
         gg.sleep(600)
     end
-
     saveOffsetsToFile(offsets)
 else
--- If offsets are already saved, show them
-local offsetDetails = {}
-for method, offset in pairs(offsets) do
-    table.insert(offsetDetails, string.format("%s: %s", method, offset))
-    _G[method] = offset ~= "nil" and offset or nil
+    local offsetDetails = {}
+    for method, offset in pairs(offsets) do
+        table.insert(offsetDetails, string.format("%s: %s", method, offset))
+        _G[method] = offset ~= "nil" and offset or nil
+    end
+    local relativePath = offsetFilePath:match("([^/]+/.+)")
+    local filePathStructure = "├─ 📁 " .. relativePath:gsub("/", "\n│ ├─ 📁 ")
+    local xXx = gg.alert(
+        "🎲 Game : " .. APK ..
+        "\n🪩 Offsets Saved File Found..!!" ..
+        "\n" .. filePathStructure ..
+        "\n" .. string.rep("─ ─", 3) ..
+        "\nOffsets : 📝\n" .. table.concat(offsetDetails, "\n"),
+        "[ Start ]", nil, "[ Update ]"
+    )
+    if xXx == 3 then
+        os.remove(offsetFilePath)
+        goto GET_READY
+    end
 end
 
--- Generate the visual file structure
-local relativePath = offsetFilePath:match("([^/]+/.+)")
-local filePathStructure = "├─ 📁 " .. relativePath:gsub("/", "\n│ ├─ 📁 ")
-
-local xXx = gg.alert(
-    "🎲 Game : " .. APK ..
-    "\n🪩 Offsets Saved File Found..!!" ..
-    "\n" .. filePathStructure ..
-    "\n" .. string.rep("─ ─", 8) ..  -- Adds a line 
-    "\nOffsets : 📝\n" .. table.concat(offsetDetails, "\n"),
-    "[ Start ]", nil, "[ Update ]"
-)
-
-if xXx == 3 then
-    os.remove(offsetFilePath)
-    goto GET_READY
-end
-end
-
--- Function to check if method offset is found, otherwise stop execution
 function check(method)
     if not _G[method] then
         gg.alert("ERROR : [ "..method .. " ] Offset not found..!")
@@ -314,232 +301,124 @@ function check(method)
         return nil
     end
     gg.toast("Hack [ON]")
-    gg.sleep(1000)
+    gg.sleep(600)
     gg.toast("--( O_O )--")
     return true
 end
-gg.setVisible(true) -- Show Menu
--- ⬜⬜⬜⏪⬜⬜⬜⏩⬜⬜⬜
--- ⬜⬜⬜⏪⬜⬜⬜⏩⬜⬜⬜
--- O = offset (use Capital O)
--- X = value (use Capital X)
--- Arm() = Patch (Patch offset Value)
--- ============================
--- RecordOriginalValue(0x523368)  -- Record the original value
--- injectAssembly(0x522A24, false) -- false value
--- injectAssembly(0x2EB4F0, 999999999) -- Int Value
--- RevertValue(0x523368)  -- Revert the values
--- ⬜⬜⬜⏪⬜⬜⬜⏩⬜⬜⬜
--- ⬜⬜⬜⏪⬜⬜⬜⏩⬜⬜⬜
 
+gg.setVisible(true)
 
-function A_ON() -- hack 1
-
-   RecordOriginalValue(get_IsIAP) -- Record Value
-   injectAssembly(get_IsIAP, false) -- Patch value
-   -- false is our edit value
-    
-return true    
+function A_ON()
+    RecordOriginalValue(get_IsIAP)
+    injectAssembly(get_IsIAP, false)
+    return true
 end
-
 
 function A_OFF()
-
-   RevertValue(get_IsIAP) -- Revert (Hack Off)
-    
-return nil
+    RevertValue(get_IsIAP)
+    return nil
 end
 
--- Hack 2 
-function B_ON() 
-
-   RecordOriginalValue(get_JumpLimit) -- Record Value
-   injectAssembly(get_JumpLimit, 99999) -- Patch value
-    
-return true
+function B_ON()
+    RecordOriginalValue(get_JumpLimit)
+    injectAssembly(get_JumpLimit, 99999)
+    return true
 end
 
 function B_OFF()
-
-   RevertValue(get_JumpLimit) -- Revert (Hack Off)
-    
-return nil
-end
-
--- Hack 3
-function C_ON() 
-
-   RecordOriginalValue(get_JumpHeight) -- Record Value
-   injectAssembly(get_JumpHeight, 99999999) -- Patch value
-    
-return true
-end
-
-function C_OFF()
-
-   RevertValue(get_JumpHeight) -- Revert (Hack Off)
-    
-return nil
+    RevertValue(get_JumpLimit)
+    return nil
 end
 
 
--- Hack Ended
-
--- Main Menu --
 menuList = {
-
-    "Free Shop", -- 1
-    "Unlimited Jump", -- 2
-    "Jump Height", -- 3
-    "EXIT", -- 4
-    
+    "💰 Free Shop",
+    "🦘 Unlimited Jump",
+    "🚪 EXIT"
 }
 
 checkList = {
-
-    nil, -- 1
-    nil,  -- 2
-    nil, -- 3
-    nil, -- 4
-    
+    nil,
+    nil,
+    nil
 }
--- Done 😉
--- Menu Function
-function menu()
-    tsu = gg.multiChoice(menuList, checkList, "━━━━[ " .. APK .. " ]━━━━")
-    if tsu == nil then return end
 
-    -- Option 1: Check and toggle A
-    if tsu[1] ~= checkList[1] then
-        if tsu[1] == true then
-            if check("get_IsIAP") then -- Check offset
+function menu()
+    local header = "\n " .. APK .. " [".. info.versionName .. "] \nBy: Saki \n"
+    local styledMenu = {}
+    for i, item in ipairs(menuList) do
+        local status = checkList[i] and "✅ [ON]" or "❌ [OFF]"
+        if i == #menuList then
+            styledMenu[i] = item
+        else
+            styledMenu[i] = item .. " " .. status
+        end
+    end
+    
+    local choice = gg.choice(styledMenu, nil, header .. "\nSelect a feature:")
+    if choice == nil then return end
+
+    if choice == 1 then
+        if not checkList[1] then
+            if check("get_IsIAP") then
                 checkList[1] = A_ON()
-            else
-                gg.toast("$ ( X_X ) $") -- Error Toast
+                gg.toast("💰 Free Shop Activated!")
             end
         else
             checkList[1] = A_OFF()
+            gg.toast("💰 Free Shop Deactivated!")
         end
     end
 
-    -- Option 2: Check and toggle B
-    if tsu[2] ~= checkList[2] then
-        if tsu[2] == true then
-            if check("get_JumpLimit") then -- Check offset
+    if choice == 2 then
+        if not checkList[2] then
+            if check("get_JumpLimit") then
                 checkList[2] = B_ON()
-            else
-                gg.toast("$ ( X_X ) $") -- Error Toast
+                gg.toast("🦘 Unlimited Jump ON!")
             end
         else
             checkList[2] = B_OFF()
+            gg.toast("🦘 Unlimited Jump OFF!")
         end
     end
 
-    -- Option 3: Check and toggle B
-    if tsu[3] ~= checkList[3] then
-        if tsu[3] == true then
-            if check("get_JumpHeight") then -- Check offset
-                checkList[3] = C_ON()
-            else
-                gg.toast("$ ( X_X ) $") -- Error Toast
-            end
-        else
-            checkList[3] = C_OFF()
-        end
-    end
-
-
-    -- Option 4: Exit
-    if tsu[4] == true then
-        checkList[4] = Exit()
+    if choice == 3 then
+        Exit()
     end
 end
--- Function to apply ARM patches
-function Arm()
-    O = tonumber(O)
-    if O == nil then 
-       return
-    end
-    for UwU = 1, #(X_X) do
-        Dick = nil
-        Dick = {}
 
-        if type(X) ~= "table" then
-            Dick[1] = {}
-            Dick[2] = {}
-            Dick[1].address = X_X[UwU] + O
-            Dick[1].flags = 4
-            if X == 0 then
-                Dick[1].value = 'h000080D2'
-            elseif X == 1 then
-                Dick[1].value = 'h200080D2'
-            else
-                Dick[1].value = X
-            end
-            Dick[2].address = X_X[UwU] + (O + 4)
-            Dick[2].flags = 4
-            Dick[2].value = 'D65F03C0h'
-        else
-            Fuck = 0
-            for Bitch = 1, #(X) do
-                Dick[Bitch] = {}
-                Dick[Bitch].address = X_X[UwU] + O + Fuck
-                Dick[Bitch].flags = 4
-                Dick[Bitch].value = tostring(X[Bitch])
-                Fuck = Fuck + 4
-            end
-        end
 
-        gg.setValues(Dick)
-    end
-end
--- ⬜⬜⬜⏪⬜⬜⬜⏩⬜⬜⬜
--- ⬜⬜⬜⏪⬜⬜⬜⏩⬜⬜⬜
--- Exit function
 function Exit()
-  print("🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳")
-  print("🔳⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛🔳")
-  print("🔳⬛⬛⬛⬛⬛🟥🟥🟥⬛⬛⬛⬛⬛🔳")
-  print("🔳⬛⬛⬛⬛🟥🟥🟥🟥🟥⬛⬛⬛⬛🔳")
-  print("🔳⬛⬛⬛🟥🟥🟥🟦🟦🟦⬛⬛⬛⬛🔳")
-  print("🔳⬛⬛⬛🟥🟥🟥🟦🟦🟦⬛⬛⬛⬛🔳")
-  print("🔳⬛⬛⬛🟥🟥🟥🟥🟥🟥⬛⬛⬛⬛🔳")
-  print("🔳⬛⬛⬛🟥🟥🟥🟥🟥🟥⬛⬛⬛⬛🔳")
-  print("🔳⬛⬛⬛⬛🟥🟥🟥🟥🟥⬛⬛⬛⬛🔳")
-  print("🔳⬛⬛⬛⬛🟥🟥⬛🟥🟥⬛⬛⬛⬛🔳")
-  print("🔳⬛⬛⬛⬛🟥🟥⬛🟥🟥⬛⬛⬛⬛🔳")
-  print("🔳⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛🔳")
-  print("🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳")
-  os.exit()
+    local anim = {
+        "🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳",
+        "🔳⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛🔳",
+        "🔳⬛⬛⬛⬛⬛🟥🟥🟥⬛⬛⬛⬛⬛🔳",
+        "🔳⬛⬛⬛⬛🟥🟥🟥🟥🟥⬛⬛⬛⬛🔳",
+        "🔳⬛⬛⬛🟥🟥🟥🟦🟦🟦⬛⬛⬛⬛🔳",
+        "🔳⬛⬛⬛🟥🟥🟥🟦🟦🟦⬛⬛⬛⬛🔳",
+        "🔳⬛⬛⬛🟥🟥🟥🟥🟥🟥⬛⬛⬛⬛🔳",
+        "🔳⬛⬛⬛🟥🟥🟥🟥🟥🟥⬛⬛⬛⬛🔳",
+        "🔳⬛⬛⬛⬛🟥🟥🟥🟥🟥⬛⬛⬛⬛🔳",
+        "🔳⬛⬛⬛⬛🟥🟥⬛🟥🟥⬛⬛⬛⬛🔳",
+        "🔳⬛⬛⬛⬛🟥🟥⬛🟥🟥⬛⬛⬛⬛🔳",
+        "🔳⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛🔳",
+        "🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳"
+    }
+    for i = #anim, 1, -1 do
+        print(anim[i])
+        gg.sleep(100)
+    end
+    gg.toast("👋 Goodbye!")
+    gg.sleep(500)
+    os.exit()
 end
 
--- Menu loop function
 while true do
     if gg.isVisible(true) then
         gg.setVisible(false)
+        gg.toast("🎮 Opening Menu...")
+        gg.sleep(300)
         menu()
     end
-end
-
-
---end func src
-end
-
-gg.setVisible(false)
-json = load(gg.makeRequest("https://raw.githubusercontent.com/rxi/json.lua/master/json.lua").content)()
-
-local ipAddress = gg.makeRequest('http://checkip.dyndns.org/').content:match("%d+%.%d+%.%d+%.%d+")
-
-if ipAddress then
-    local vpnData = json.decode(gg.makeRequest('http://v2.api.iphub.info/ip/' .. ipAddress, {
-        ['X-Key'] = "MjcyODk6QXZzMkhYczBiakFwSVlJUkZ6bkpodlM1V1NiQ1BZWEE="
-    }).content)
-
-    if vpnData and vpnData.block == 1 then
-        while true do gg.alert("⚠️ VPN Or Proxy Detected ⚠️ \n\n🔒 Reject IP Address :" .. ipAddress .. "","Exit") break end
-    else
-        gg.alert("🟢 No VPN Or Proxy Detected 🟢\n\n🔓 Accept IP Address : " .. ipAddress .. "","close");src()
-    end
-else
-    gg.alert("⚠️ IP Address Could Not Be Parsed ⚠️")
+    gg.sleep(100)
 end
